@@ -1,1 +1,0 @@
-ENCHANTED_DIAMOND;{'buyVolume': 799755, 'buyOrders': 1017, 'buyPrice': 1285.2, 'buyMovingWeek': 8335757, 'sellVolume': 4247712, 'sellOrders': 276, 'sellPrice': 1285.0, 'sellMovingWeek': 33051972, 'RoI': -1.0, 'margin': 0.20000000000004547, 'buySellDiff': -3447957, 'reliability': 0, 'product': 'ENCHANTED_DIAMOND'}
