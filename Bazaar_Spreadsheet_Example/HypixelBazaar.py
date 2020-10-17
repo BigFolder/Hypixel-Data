@@ -106,7 +106,7 @@ Returns a dictionary of each product and all of the data we considered valuable.
 def gather_bazaar_data(API_KEY, modelFile):
     buyData = {}
     data = requests.get("https://api.hypixel.net/skyblock/bazaar?key=" + API_KEY).json()
-    productFrequency = getProdFreq()
+    #productFrequency = getProdFreq()
     for productID in data['products']:
         sumBoolean = len(data['products'][productID]['buy_summary']) > 0 and \
                      len(data['products'][productID]['sell_summary']) > 0
@@ -128,6 +128,7 @@ def gather_bazaar_data(API_KEY, modelFile):
                 sellMovingWeek = data['products'][productID]['quick_status']['sellMovingWeek']
                 margin = ((buyPrice * .99) - .1) - (sellPrice + .1)
                 buySellDiff = buyVolume - sellVolume
+                avgVolume = round((buyMovingWeek + sellMovingWeek) / 2, 2)
 
                 if buyPrice != 0:
                     # Return of Investment calculation
@@ -148,7 +149,8 @@ def gather_bazaar_data(API_KEY, modelFile):
                                                                              'sellMovingWeek': sellMovingWeek,
                                                                              'RoI': RoI,
                                                                              'margin': margin,
-                                                                             'buySellDiff': buySellDiff})
+                                                                             'buySellDiff': buySellDiff,
+                                                                             'avgVolume': avgVolume})
                         buyData.update({productID: {'buyVolume': buyVolume,
                                                     'buyOrders': buyOrders,
                                                     'buyPrice': buyPrice,
@@ -160,8 +162,9 @@ def gather_bazaar_data(API_KEY, modelFile):
                                                     'RoI': RoI, 'margin': margin,
                                                     'buySellDiff': buySellDiff,
                                                     'reliability': reliability,
-                                                    'reliabilityFreq%': productFrequency[productID]}})
-
+                                                    'reliabilityFreq%': 0,
+                                                    'avgVolume': avgVolume}})
+                        #'reliabilityFreq%': productFrequency[productID]
     return buyData
 
 
@@ -193,7 +196,7 @@ def sortData(data, dataFeature):
 
 
 '''
-Heavily WIP, attempts to give possible investment options based on the amount of GP given.
+Attempts to give valid investment options of the current products in the Hypixel Bazaar.
 '''
 
 
@@ -209,35 +212,41 @@ def giveInsight(data, amount):
         check0 = (data[random_item]["buyMovingWeek"] + data[random_item]["sellMovingWeek"]) / \
                  (data[random_item]["margin"]) >= 2000
         never = ["ENCHANTED_PUFFERFISH", "STOCK_OF_STONKS"]
+                    #"check5": float(data[random_item]["reliabilityFreq%"]) >= 45
         booleanDict = {25e5: {"check2": data[random_item]["margin"] >= 40,
                               "check3": data[random_item]["buyMovingWeek"] >= 6e5,
                               "check4": data[random_item]["sellMovingWeek"] >= 6e5,
-                              "check5": float(data[random_item]["reliabilityFreq%"]) >= 45
+                              "check5": True
                               },
+                       #"check5": float(data[random_item]["reliabilityFreq%"]) >= 45
                        55e5: {"check2": data[random_item]["margin"] >= 80,
                               "check3": data[random_item]["buyMovingWeek"] >= 6e5,
                               "check4": data[random_item]["sellMovingWeek"] >= 6e5,
-                              "check5": float(data[random_item]["reliabilityFreq%"]) >= 45
+                              "check5": True
                               },
+                       #"check5": float(data[random_item]["reliabilityFreq%"]) >= 40
                        1e6: {"check2": data[random_item]["margin"] >= 100,
                              "check3": data[random_item]["buyMovingWeek"] >= 75e5,
                              "check4": data[random_item]["sellMovingWeek"] >= 75e5,
-                             "check5": float(data[random_item]["reliabilityFreq%"]) >= 40
+                             "check5": True
                              },
+                       #float(data[random_item]["reliabilityFreq%"]) >= 35
                        25e6: {"check2": data[random_item]["margin"] >= 110,
                               "check3": data[random_item]["buyMovingWeek"] >= 75e5,
                               "check4": data[random_item]["sellMovingWeek"] >= 75e5,
-                              "check5": float(data[random_item]["reliabilityFreq%"]) >= 35
+                              "check5": True
                               },
+                       #float(data[random_item]["reliabilityFreq%"]) >= 15
                        5e6: {"check2": (data[random_item]["margin"] >= 125),
                              "check3": data[random_item]["buyMovingWeek"] >= 8e5,
                              "check4": data[random_item]["sellMovingWeek"] >= 8e5,
-                             "check5": float(data[random_item]["reliabilityFreq%"]) >= 15
+                             "check5": True
                              },
+                       #float(data[random_item]["reliabilityFreq%"]) >= 0
                        75e6: {"check2": data[random_item]["margin"] >= 150,
                               "check3": data[random_item]["buyMovingWeek"] >= 1e5,
                               "check4": data[random_item]["sellMovingWeek"] >= 1e5,
-                              "check5": float(data[random_item]["reliabilityFreq%"]) >= 0
+                              "check5": True
                               },
 
                        }
@@ -333,6 +342,12 @@ def giveInsight(data, amount):
     return {'insight': insight, 'entireCost': entireCost, 'playerAmount': amount, 'entireSoldFor': entireSoldFor}
 
 
+'''
+Gets all items you can purchase from the vendors and determine how much profit (if any) you'd get selling it to the
+Bazaar instantly.
+'''
+
+
 def sellerShuffle(data):
     #BUYCAP = 640
 
@@ -372,8 +387,33 @@ def sellerShuffle(data):
             totalCost = sellerItems[product]["vendorCost"] * 640
             finalData.update({product: {"buyFor": totalCost, "sellFor": totalSale, "profit": totalSale - totalCost}})
         elif product in sellerItems:
-            totalCost = sellerItems[product]["vendorCost"] * 640
-            totalSale = data[product]['sellPrice'] * 640
-            finalData.update({product: {"buyFor": totalCost, "sellFor": totalSale, "profit": totalSale - totalCost}})
+            if product == "IRON_INGOT" or product == "GOLD_INGOT":
+                totalCost = sellerItems[product]["vendorCost"] * 1280
+                totalSale = data[product]['sellPrice'] * 1280
+                finalData.update({product: {"buyFor": totalCost,
+                                            "sellFor": totalSale,
+                                            "profit": totalSale - totalCost}})
+            else:
+                totalCost = sellerItems[product]["vendorCost"] * 640
+                totalSale = data[product]['sellPrice'] * 640
+                finalData.update(
+                    {product: {"buyFor": totalCost,
+                               "sellFor": totalSale,
+                               "profit": totalSale - totalCost}})
 
     return finalData
+
+
+def merchantMinionShuffle(data):
+    minionItems = {"SNOW_BALL": 1, "ENCHANTED_SNOW_BLOCK": 600,
+                   "DIAMOND": 8, "ENCHANTED_DIAMOND": 1280,
+                   "CLAY_BALL": 3, "ENCHANTED_CLAY_BALL": 480}
+    finalResults = {}
+    for item in minionItems:
+        if item in data:
+            instaSell = data[item]["sellPrice"]
+            slowSell = data[item]["buyPrice"]
+            vendorSell = minionItems[item]
+            finalResults.update({item: {"instaSell": instaSell, "slowSell": slowSell,
+                                        "vendorSell": vendorSell}})
+    return finalResults
