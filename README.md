@@ -1,6 +1,6 @@
 # [Example of updating Google Spreadsheet](https://docs.google.com/spreadsheets/d/1HIuR6UwqzY7NjcOvMB4Z0gw68RZRKjDAq9ettuaQ4X4/edit?usp=sharing)
 
-## This Repository holds a base example of how to use Machine learning models created in sklearn to help you decide which items you want to invest in on the game.
+### This Repository holds a base example of how to use Machine learning models created in sklearn to help you decide which items you want to invest into on the "Skyblock" game.
 
 
 ### Current Models from sklearn being used (You can see the directory "Bazaar" to view how the simple creation of each model was done. I wanted to post the full run through, but I wanted to use libraries that are in sklearn by default(no LGBM) NOTE: HistGradientBoostClassifier can used in trial and should be similar to LGBM now), parameter tweaking is not shown here sadly.
