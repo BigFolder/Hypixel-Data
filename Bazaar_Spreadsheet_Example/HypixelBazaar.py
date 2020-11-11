@@ -3,6 +3,8 @@ import pandas as pd
 import pickle
 import csv
 import random
+import datetime
+from datetime import datetime
 
 '''
 Loads our Machine Learning model using Pickle, creates a dataframe of our bazaar product
@@ -11,12 +13,24 @@ See dataCleaningBazaar.py for in depth explanation of forest and how to modify t
 '''
 
 
-def useModel(modelFile, dataSet):
-    model = pickle.load(open(modelFile, 'rb'))
-    test = pd.DataFrame(dataSet, index=[0])
-    getVal = model.predict(test)
+def getVote(models, dataset):
+    test = pd.DataFrame(dataset, index=[0])
+    votes = []
 
-    return int(getVal)
+    for model in models:
+        getVal = model.predict(test)
+        votes.append(int(getVal))
+
+    return max(set(votes), key=votes.count)
+
+
+def loadModels(fileList):
+    models = []
+
+    for file in fileList:
+        models.append(pickle.load(open(file, 'rb')))
+
+    return models
 
 
 '''
@@ -50,8 +64,9 @@ def checkCrashData(newData):
                     if (perc1 or perc2 or perc3) and (newData[product]['margin'] >= 15):
                         x = [product, newData[product]['buyOrders'] / oldData[product]['buyOrders'],
                              newData[product]['sellOrders'] / oldData[product]['sellOrders'],
-                             newData[product]['margin'] / oldData[product]['margin'],
-                             newData[product]['margin'], oldData[product]['margin']]
+                             newData[product]['margin'] - oldData[product]['margin'],
+                             newData[product]['margin'], oldData[product]['margin'],
+                             str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))]
                         possibleCrash.append(x)
 
                     else:
@@ -73,7 +88,7 @@ def saveCrashData(data):
         data[product].update({'product': product})
         file.write(str(data[product]) + '\n')
     file.close()
-    #print("Crash Data Saved")
+
 
 
 '''
@@ -92,7 +107,7 @@ def saveBazaarData(data):
         file.write(str(product) + ";" + str(data[product]) + '\n')
     file.close()
 
-    #print('Bazaar Data Saved')
+
 
 
 '''
@@ -103,10 +118,12 @@ Returns a dictionary of each product and all of the data we considered valuable.
 '''
 
 
-def gather_bazaar_data(API_KEY, modelFile):
+def gather_bazaar_data(API_KEY, fileList):
     buyData = {}
+    ml_models = loadModels(fileList)
+
     data = requests.get("https://api.hypixel.net/skyblock/bazaar?key=" + API_KEY).json()
-    #productFrequency = getProdFreq()
+
     for productID in data['products']:
         sumBoolean = len(data['products'][productID]['buy_summary']) > 0 and \
                      len(data['products'][productID]['sell_summary']) > 0
@@ -138,19 +155,22 @@ def gather_bazaar_data(API_KEY, modelFile):
 
                     RoI = round(((soldFor - boughtFor) / boughtFor) * 100, 3)
 
+                    dataset = {'buyVolume': buyVolume,
+                               'buyOrders': buyOrders,
+                               'buyPrice': buyPrice,
+                               'buyMovingWeek': buyMovingWeek,
+                               'sellVolume': sellVolume,
+                               'sellOrders': sellOrders,
+                               'sellPrice': sellPrice,
+                               'sellMovingWeek': sellMovingWeek,
+                               'RoI': RoI,
+                               'margin': margin,
+                               'buySellDiff': buySellDiff,
+                               'avgVolume': avgVolume}
+
                     if productID not in buyData:
-                        reliability = useModel(modelFile=modelFile, dataSet={'buyVolume': buyVolume,
-                                                                             'buyOrders': buyOrders,
-                                                                             'buyPrice': buyPrice,
-                                                                             'buyMovingWeek': buyMovingWeek,
-                                                                             'sellVolume': sellVolume,
-                                                                             'sellOrders': sellOrders,
-                                                                             'sellPrice': sellPrice,
-                                                                             'sellMovingWeek': sellMovingWeek,
-                                                                             'RoI': RoI,
-                                                                             'margin': margin,
-                                                                             'buySellDiff': buySellDiff,
-                                                                             'avgVolume': avgVolume})
+                        reliability = getVote(models=ml_models, dataset=dataset)
+
                         buyData.update({productID: {'buyVolume': buyVolume,
                                                     'buyOrders': buyOrders,
                                                     'buyPrice': buyPrice,
@@ -164,7 +184,7 @@ def gather_bazaar_data(API_KEY, modelFile):
                                                     'reliability': reliability,
                                                     'reliabilityFreq%': 0,
                                                     'avgVolume': avgVolume}})
-                        #'reliabilityFreq%': productFrequency[productID]
+                        # 'reliabilityFreq%': productFrequency[productID]
     return buyData
 
 
