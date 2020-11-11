@@ -5,6 +5,7 @@ import bazaarCraftFlips
 import HypixelBazaar
 import sys
 
+
 '''
 Updates all product data on google spreadsheet.
 Limit 100 Writes per 100 seconds, so we cap it to 50 viable investments and 15 possible market crashes.
@@ -203,10 +204,11 @@ and have the information posted to a public interface(Google Spreadsheets or Pos
 
 
 def main(count):
+
     with open('env.txt', 'r') as file:
         line = file.readline()
         line = eval(line)
-        API_KEY = line["API_KEY"]
+        KEY = line["API_KEY"]
         gsheetAPI1 = line["gsheetAPI1"]
         gsheetAPI2 = line["gsheetAPI2"]
         gsheetAPI3 = line["gsheetAPI3"]
@@ -214,11 +216,14 @@ def main(count):
         sheet = "HypixelInvest"
         file.close()
 
+    files = ["models/abc.sav", "models/bagging.sav", "models/extratrees.sav", "models/KNN.sav", "models/randomforest.sav", "models/gradientboost.sav"]
+
     while True:
 
-        try:
+
             # Clean the data and create predictions on the data
-            currentData = HypixelBazaar.gather_bazaar_data(API_KEY=API_KEY, modelFile="finalized_multiclass_model.sav")
+
+            currentData = HypixelBazaar.gather_bazaar_data(API_KEY=KEY, fileList=files)
 
             # Sort the data by margin, change this if you want by changing the string 'margin' to something else
             reliability_sort = HypixelBazaar.sortData(data=currentData, dataFeature='margin')
@@ -281,10 +286,10 @@ def main(count):
 
 
         # Catches the only error we end up hitting, an api error with gspread that randomly occurs (I don't know)
-        except:
-            print(sys.exc_info())
-            time.sleep(60)
-            main(count)
+        #except:
+        #    print(sys.exc_info())
+        #    time.sleep(60)
+        #    main(count)
 
 
 # Call main initializing count to 0
