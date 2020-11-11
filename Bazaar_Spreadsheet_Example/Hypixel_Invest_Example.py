@@ -220,67 +220,71 @@ def main(count):
 
     while True:
 
+            try:
+                # Clean the data and create predictions on the data
 
-            # Clean the data and create predictions on the data
+                currentData = HypixelBazaar.gather_bazaar_data(API_KEY=KEY, fileList=files)
 
-            currentData = HypixelBazaar.gather_bazaar_data(API_KEY=KEY, fileList=files)
+                # Sort the data by margin, change this if you want by changing the string 'margin' to something else
+                reliability_sort = HypixelBazaar.sortData(data=currentData, dataFeature='margin')
 
-            # Sort the data by margin, change this if you want by changing the string 'margin' to something else
-            reliability_sort = HypixelBazaar.sortData(data=currentData, dataFeature='margin')
+                # Updates the google sheet based on all of the data above
+                updateGoogleSheet(newData=reliability_sort, gsheetAPI=gsheetAPI1, sheetName=sheet)
 
-            # Updates the google sheet based on all of the data above
-            updateGoogleSheet(newData=reliability_sort, gsheetAPI=gsheetAPI1, sheetName=sheet)
+                # Gather insight and update The insight spreadsheet
+                amounts = [10e6, 5e6, 1e6, 500e3, 125e3]
+                insightData = []
+                for amount in amounts:
+                    insightData.append(HypixelBazaar.giveInsight(currentData, amount))
 
-            # Gather insight and update The insight spreadsheet
-            amounts = [10e6, 5e6, 1e6, 500e3, 125e3]
-            insightData = []
-            for amount in amounts:
-                insightData.append(HypixelBazaar.giveInsight(currentData, amount))
+                updateInsightGoogleSheet(insight=insightData, gsheetAPI=gsheetAPI2, sheetName=sheet)
 
-            updateInsightGoogleSheet(insight=insightData, gsheetAPI=gsheetAPI2, sheetName=sheet)
+                # Gather Merchant data from bazaar and update Merchant Spreadsheet
 
-            # Gather Merchant data from bazaar and update Merchant Spreadsheet
+                testShuffle = HypixelBazaar.sellerShuffle(currentData)
 
-            testShuffle = HypixelBazaar.sellerShuffle(currentData)
+                profitSort = HypixelBazaar.sortData(data=testShuffle, dataFeature="profit")
 
-            profitSort = HypixelBazaar.sortData(data=testShuffle, dataFeature="profit")
+                minionShuffles = HypixelBazaar.merchantMinionShuffle(currentData)
 
-            minionShuffles = HypixelBazaar.merchantMinionShuffle(currentData)
-
-            updateShuffleSheet(newData=profitSort, gsheetAPI=gsheetAPI3, sheetName=sheet, minionShuffles=minionShuffles)
-
-
-            #finalSheet Bazaar Enchants
-
-            bazaarCosts = bazaarCraftFlips.bazaarPart()
-
-            auctionPrices = bazaarCraftFlips.auctionPart()
-
-            finalData = bazaarCraftFlips.compareData(bazaarCosts, auctionPrices)
-
-            sortedFlips = HypixelBazaar.sortData(data=finalData, dataFeature="minProfit")
-            time.sleep(20)
-            updateCraftFlippingSheet(newData=sortedFlips, gsheetAPI=gsheetAPI4, sheetName=sheet)
-            # Saves the currentData in our CrashData file, ensuring it becomes the next "previous" data
-            crashes = []
-            crashes.append(HypixelBazaar.checkCrashData(currentData))
-            HypixelBazaar.saveCrashData(data=currentData)
-            count += 1
-            print("Sheet last updated on", datetime.now())
+                updateShuffleSheet(newData=profitSort, gsheetAPI=gsheetAPI3, sheetName=sheet, minionShuffles=minionShuffles)
 
 
-            if count % 3 == 0:
-                updateCrashesGoogleSheet(crashData=crashes, gsheetAPI=gsheetAPI1, sheetName=sheet)
+                #finalSheet Bazaar Enchants
+
+                bazaarCosts = bazaarCraftFlips.bazaarPart()
+
+                auctionPrices = bazaarCraftFlips.auctionPart()
+
+                finalData = bazaarCraftFlips.compareData(bazaarCosts, auctionPrices)
+
+                sortedFlips = HypixelBazaar.sortData(data=finalData, dataFeature="minProfit")
+                time.sleep(20)
+                updateCraftFlippingSheet(newData=sortedFlips, gsheetAPI=gsheetAPI4, sheetName=sheet)
+                # Saves the currentData in our CrashData file, ensuring it becomes the next "previous" data
                 crashes = []
-                time.sleep(50)
+                crashes.append(HypixelBazaar.checkCrashData(currentData))
+                HypixelBazaar.saveCrashData(data=currentData)
+                count += 1
+                print("Sheet last updated on", datetime.now())
 
 
-            if count % 5 == 0:
-                HypixelBazaar.saveBazaarData(currentData)
+                if count % 3 == 0:
+                    updateCrashesGoogleSheet(crashData=crashes, gsheetAPI=gsheetAPI1, sheetName=sheet)
+                    crashes = []
+                    time.sleep(50)
 
-                time.sleep(50)
-            else:
-                time.sleep(80)
+
+                if count % 5 == 0:
+                    HypixelBazaar.saveBazaarData(currentData)
+
+                    time.sleep(50)
+                else:
+                    time.sleep(80)
+                    
+            except:
+                print("Encountered error", sys.exc_info()[0])
+                main()
 
 
 
