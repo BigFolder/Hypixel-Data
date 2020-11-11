@@ -1,37 +1,22 @@
-## Welcome to GitHub Pages
+# [Example of updating Google Spreadsheet](https://docs.google.com/spreadsheets/d/1HIuR6UwqzY7NjcOvMB4Z0gw68RZRKjDAq9ettuaQ4X4/edit?usp=sharing)
 
-You can use the [editor on GitHub](https://github.com/BigFolder/Hypixel-Data/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+## This Repository holds a base example of how to use Machine learning models created in sklearn to help you decide which items you want to invest in on the game.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
-### Markdown
+### Current Models from sklearn being used (You can see the directory "Bazaar" to view how the simple creation of each model was done. I wanted to post the full run through, but I wanted to use libraries that are in sklearn by default(no LGBM) NOTE: HistGradientBoostClassifier can used in trial and should be similar to LGBM now), parameter tweaking is not shown here sadly.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+- AdaBoostingClassifier
+- KNearestNeighbor
+- RandomForestClassifier
+- ExtraTreesClassifier
+- BaggingClassifier
+- GradientBoostingClassifier
 
-```markdown
-Syntax highlighted code block
+## What are they predicting?
 
-# Header 1
-## Header 2
-### Header 3
+Over the last Summer I had some friends collect data from users in their discord servers, they were shown the information we used to fit each model, and the users gave it a rating from 0-9. When there was enough data to really work with, the models were then created and tweaked. The rating is called "reliability" for our purposes simply due to us having multiple uses for this prediction. 
 
-- Bulleted
-- List
+With the use of some of the functionality from [Baritone](https://github.com/cabaletta/baritone) I believe a bot can be created to efficiently and effectively do Bazaar work for you, so far trials are showing to be successful, However with a bit more data (Perhaps some type of rolling average of each week for an entire year) it will be working signifigantly well.
 
-1. Numbered
-2. List
 
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/BigFolder/Hypixel-Data/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+###
