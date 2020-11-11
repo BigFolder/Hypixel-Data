@@ -37,7 +37,8 @@ def bazaarPart():
         "Punch I": {"paper": 6, "SLIME_BALL": 2, "stick": 2, "FEATHER": 2, "FLINT": 2},
         "Infinite Quiver V": {"paper": 48, "stick": 6, "STRING": 6}
     }
-    bazaarData = HypixelBazaar.gather_bazaar_data("", modelFile="finalized_multiclass_model.sav")
+    files = ["models/abc.sav", "models/bagging.sav", "models/extratrees.sav", "models/KNN.sav", "models/randomforest.sav", "models/gradientboost.sav"]
+    bazaarData = HypixelBazaar.gather_bazaar_data(API_KEY="", fileList=files)
 
     scuffNames = {"LOG:1": "Spruce Wood", "LOG:3": "Jungle Wood", "LOG:2": "Birch Wood", "CARROT_ITEM": "Carrot",
                   "LOG": "Oak Wood", "POTATO_ITEM": "Potato", "INK_SACK:3": "Cocoa Bean", "LOG_2": "Acacia Wood",
