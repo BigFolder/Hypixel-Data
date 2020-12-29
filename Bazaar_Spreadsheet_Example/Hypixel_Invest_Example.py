@@ -2,7 +2,7 @@ import gspread
 import time
 from datetime import datetime
 import bazaarCraftFlips
-import HypixelBazaar
+import HypixelData
 import sys
 
 
@@ -204,7 +204,8 @@ and have the information posted to a public interface(Google Spreadsheets or Pos
 
 
 def main(count):
-
+    # Uses simple env.txt file to get your API account names and your API KEY, just avoids placing them in the code.
+    # You can remove this and set the Variables to specific values if you want!
     with open('env.txt', 'r') as file:
         line = file.readline()
         line = eval(line)
@@ -223,10 +224,10 @@ def main(count):
             try:
                 # Clean the data and create predictions on the data
 
-                currentData = HypixelBazaar.gather_bazaar_data(API_KEY=KEY, fileList=files)
+                currentData = HypixelData.gather_bazaar_data(API_KEY=KEY, fileList=files)
 
                 # Sort the data by margin, change this if you want by changing the string 'margin' to something else
-                reliability_sort = HypixelBazaar.sortData(data=currentData, dataFeature='margin')
+                reliability_sort = HypixelData.sortData(data=currentData, dataFeature='margin')
 
                 # Updates the google sheet based on all of the data above
                 updateGoogleSheet(newData=reliability_sort, gsheetAPI=gsheetAPI1, sheetName=sheet)
@@ -235,17 +236,17 @@ def main(count):
                 amounts = [10e6, 5e6, 1e6, 500e3, 125e3]
                 insightData = []
                 for amount in amounts:
-                    insightData.append(HypixelBazaar.giveInsight(currentData, amount))
+                    insightData.append(HypixelData.giveInsight(currentData, amount))
 
                 updateInsightGoogleSheet(insight=insightData, gsheetAPI=gsheetAPI2, sheetName=sheet)
 
                 # Gather Merchant data from bazaar and update Merchant Spreadsheet
 
-                testShuffle = HypixelBazaar.sellerShuffle(currentData)
+                testShuffle = HypixelData.sellerShuffle(currentData)
 
-                profitSort = HypixelBazaar.sortData(data=testShuffle, dataFeature="profit")
+                profitSort = HypixelData.sortData(data=testShuffle, dataFeature="profit")
 
-                minionShuffles = HypixelBazaar.merchantMinionShuffle(currentData)
+                minionShuffles = HypixelData.merchantMinionShuffle(currentData)
 
                 updateShuffleSheet(newData=profitSort, gsheetAPI=gsheetAPI3, sheetName=sheet, minionShuffles=minionShuffles)
 
@@ -258,13 +259,13 @@ def main(count):
 
                 finalData = bazaarCraftFlips.compareData(bazaarCosts, auctionPrices)
 
-                sortedFlips = HypixelBazaar.sortData(data=finalData, dataFeature="minProfit")
+                sortedFlips = HypixelData.sortData(data=finalData, dataFeature="minProfit")
                 time.sleep(20)
                 updateCraftFlippingSheet(newData=sortedFlips, gsheetAPI=gsheetAPI4, sheetName=sheet)
                 # Saves the currentData in our CrashData file, ensuring it becomes the next "previous" data
                 crashes = []
-                crashes.append(HypixelBazaar.checkCrashData(currentData))
-                HypixelBazaar.saveCrashData(data=currentData)
+                crashes.append(HypixelData.checkCrashData(currentData))
+                HypixelData.saveCrashData(data=currentData)
                 count += 1
                 print("Sheet last updated on", datetime.now())
 
@@ -276,7 +277,7 @@ def main(count):
 
 
                 if count % 5 == 0:
-                    HypixelBazaar.saveBazaarData(currentData)
+                    HypixelData.saveBazaarData(currentData)
 
                     time.sleep(50)
                 else:
@@ -284,17 +285,7 @@ def main(count):
                     
             except:
                 print("Encountered error", sys.exc_info()[0])
-                main()
+                main(0)
 
 
-
-
-        # Catches the only error we end up hitting, an api error with gspread that randomly occurs (I don't know)
-        #except:
-        #    print(sys.exc_info())
-        #    time.sleep(60)
-        #    main(count)
-
-
-# Call main initializing count to 0
 main(count=0)
