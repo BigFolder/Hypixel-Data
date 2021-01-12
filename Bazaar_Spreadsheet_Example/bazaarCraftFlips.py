@@ -1,5 +1,4 @@
-import HypixelBazaar
-import HypixelAuctions
+import HypixelData
 
 
 def getCheapestLog(data):
@@ -13,7 +12,7 @@ def getCheapestLog(data):
     return min(logs.items())
 
 
-def bazaarPart():
+def bazaarPart(files):
     enchShuffle = {
         "Critical V": {"paper": 48, "ENCHANTED_DIAMOND": 16},
         "Cubism V": {"paper": 48, "PUMPKIN": 64},
@@ -37,8 +36,7 @@ def bazaarPart():
         "Punch I": {"paper": 6, "SLIME_BALL": 2, "stick": 2, "FEATHER": 2, "FLINT": 2},
         "Infinite Quiver V": {"paper": 48, "stick": 6, "STRING": 6}
     }
-    files = ["models/abc.sav", "models/bagging.sav", "models/extratrees.sav", "models/KNN.sav", "models/randomforest.sav", "models/gradientboost.sav"]
-    bazaarData = HypixelBazaar.gather_bazaar_data(API_KEY="", fileList=files)
+    bazaarData = HypixelData.gather_bazaar_data("", fileList=files)
 
     scuffNames = {"LOG:1": "Spruce Wood", "LOG:3": "Jungle Wood", "LOG:2": "Birch Wood", "CARROT_ITEM": "Carrot",
                   "LOG": "Oak Wood", "POTATO_ITEM": "Potato", "INK_SACK:3": "Cocoa Bean", "LOG_2": "Acacia Wood",
@@ -91,10 +89,10 @@ def bazaarPart():
 
 
 def auctionPart():
-    dirty_data = HypixelAuctions.gather_page_amount(API_KEY="")
-    data = HypixelAuctions.gatherAuctionData(dirty_data)
+    # Empty String API Key not needed(?)
+    data = HypixelData.gatherAuctionData("")
 
-    bookData = HypixelAuctions.checkBooks(data)
+    bookData = HypixelData.checkBooks(data)
 
     enchShuffle = {
         "Critical V": {"paper": 48, "ENCHANTED_DIAMOND": 16},
@@ -122,7 +120,7 @@ def auctionPart():
 
     requestedEnchants = [ench for ench in enchShuffle]
 
-    myBooks = HypixelAuctions.findBooks(bookData, requestedEnchants)
+    myBooks = HypixelData.findBooks(bookData, requestedEnchants)
     # print("Books", len(myBooks))
     finalBooks = {}
 
@@ -146,7 +144,6 @@ def compareData(bzData, ahData):
 
         if item in bzData and item in ahData:
             minProfit = round(ahData[item]["minPrice"] - bzData[item]["totalCost"], 2)
-            #avgProfit = round(ahData[item]["avgPrice"] - bzData[item]["totalCost"], 2)
 
             completeData.update({item: {"bzCost": bzData[item]["totalCost"],
                                         "ahCost": ahData[item]["minPrice"],
@@ -160,4 +157,3 @@ def compareData(bzData, ahData):
                                         "minProfit": -1}})
 
     return completeData
-

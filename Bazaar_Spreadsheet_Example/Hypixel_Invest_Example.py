@@ -4,6 +4,16 @@ from datetime import datetime
 import bazaarCraftFlips
 import HypixelData
 import sys
+import warnings
+
+# Used to handle old sklearn model warning, SKLearn updates and you should typical update your models with it.
+
+
+def warn(*args, **kwargs):
+    pass
+
+
+warnings.warn = warn
 
 
 '''
@@ -69,7 +79,7 @@ def updateShuffleSheet(newData, gsheetAPI, sheetName, minionShuffles):
         wks.update("F"+str(n)+":I"+str(n), [[item, minionShuffles[item]["vendorSell"],
                                              minionShuffles[item]["instaSell"],
                                              minionShuffles[item]["slowSell"]]])
-        n+= 1
+        n += 1
 
     print("Done with Merchant Shuffles")
 
@@ -134,15 +144,16 @@ def updateCrashesGoogleSheet(crashData, gsheetAPI, sheetName):
     n = 3
     for crashIndex in crashData:
         for crash in crashIndex:
-            if crash[0] in scuffNames:
+            if crash['product'] in scuffNames:
                 crashName = scuffNames[crash[0]]
             else:
                 crashName = crash[0]
 
-            wks.update('A' + str(n) + ":F" + str(n), [[crashName, round(crash[4], 2), round(crash[3], 2),
-                                                       str(round(crash[5] * 100, 3)) + "%",
-                                                       str(round(crash[1] * 100, 3)) + "%",
-                                                       str(round(crash[2] * 100, 3)) + "%"]])
+            wks.update('A' + str(n) + ":F" + str(n), [[crashName, round(crash['newMargin'], 2), round(crash['oldMargin'], 2),
+                                                       str(round(crash['marginDiff'] * 100, 3)) + "%",
+                                                       str(round(crash['buyOrderDiff'] * 100, 3)) + "%",
+                                                       str(round(crash['sellOrderDiff'] * 100, 3)) + "%"],
+                                                      str(crash['dateTime'])])
             n += 1
 
         # Wipes old crash data that may be sitting in the spreadsheet.
@@ -204,88 +215,88 @@ and have the information posted to a public interface(Google Spreadsheets or Pos
 
 
 def main(count):
-    # Uses simple env.txt file to get your API account names and your API KEY, just avoids placing them in the code.
-    # You can remove this and set the Variables to specific values if you want!
-    with open('env.txt', 'r') as file:
-        line = file.readline()
-        line = eval(line)
-        KEY = line["API_KEY"]
-        gsheetAPI1 = line["gsheetAPI1"]
-        gsheetAPI2 = line["gsheetAPI2"]
-        gsheetAPI3 = line["gsheetAPI3"]
-        gsheetAPI4 = line["gsheetAPI4"]
-        sheet = "HypixelInvest"
-        file.close()
+    try:
+        with open('env.txt', 'r') as file:
+            line = file.readline()
+            line = eval(line)
+            KEY = line["API_KEY"]
 
-    files = ["models/abc.sav", "models/bagging.sav", "models/extratrees.sav", "models/KNN.sav", "models/randomforest.sav", "models/gradientboost.sav"]
+            gsheetAPI1 = "API_Accounts/"+line["gsheetAPI1"]
+            gsheetAPI2 = "API_Accounts/"+line["gsheetAPI2"]
+            gsheetAPI3 = "API_Accounts/"+line["gsheetAPI3"]
+            gsheetAPI4 = "API_Accounts/"+line["gsheetAPI4"]
 
-    while True:
+            sheet = "HypixelInvest"
+            file.close()
 
-            try:
-                # Clean the data and create predictions on the data
+        files = ["models/abc.sav", "models/bagging.sav", "models/extratrees.sav", "models/KNN.sav", "models/randomforest.sav", "models/gradientboosting.sav"]
+        crashes = []
+        while True:
 
-                currentData = HypixelData.gather_bazaar_data(API_KEY=KEY, fileList=files)
+            # Clean the data and create predictions on the data
 
-                # Sort the data by margin, change this if you want by changing the string 'margin' to something else
-                reliability_sort = HypixelData.sortData(data=currentData, dataFeature='margin')
+            currentData = HypixelData.gather_bazaar_data(API_KEY=KEY, fileList=files)
 
-                # Updates the google sheet based on all of the data above
-                updateGoogleSheet(newData=reliability_sort, gsheetAPI=gsheetAPI1, sheetName=sheet)
+            # Sort the data by margin, change this if you want by changing the string 'margin' to something else
+            reliability_sort = HypixelData.sortData(data=currentData, dataFeature='margin')
 
-                # Gather insight and update The insight spreadsheet
-                amounts = [10e6, 5e6, 1e6, 500e3, 125e3]
-                insightData = []
-                for amount in amounts:
-                    insightData.append(HypixelData.giveInsight(currentData, amount))
+            # Updates the google sheet based on all of the data above
+            updateGoogleSheet(newData=reliability_sort, gsheetAPI=gsheetAPI1, sheetName=sheet)
+            time.sleep(30)
+            # Gather insight and update The insight spreadsheet
+            amounts = [10e6, 5e6, 1e6, 500e3, 125e3]
+            insightData = []
+            for amount in amounts:
+                insightData.append(HypixelData.giveInsight(currentData, amount))
 
-                updateInsightGoogleSheet(insight=insightData, gsheetAPI=gsheetAPI2, sheetName=sheet)
+            updateInsightGoogleSheet(insight=insightData, gsheetAPI=gsheetAPI2, sheetName=sheet)
+            time.sleep(30)
+            # Gather Merchant data from bazaar and update Merchant Spreadsheet
 
-                # Gather Merchant data from bazaar and update Merchant Spreadsheet
+            testShuffle = HypixelData.sellerShuffle(currentData)
 
-                testShuffle = HypixelData.sellerShuffle(currentData)
+            profitSort = HypixelData.sortData(data=testShuffle, dataFeature="profit")
 
-                profitSort = HypixelData.sortData(data=testShuffle, dataFeature="profit")
+            minionShuffles = HypixelData.merchantMinionShuffle(currentData)
 
-                minionShuffles = HypixelData.merchantMinionShuffle(currentData)
+            updateShuffleSheet(newData=profitSort, gsheetAPI=gsheetAPI3, sheetName=sheet, minionShuffles=minionShuffles)
+            time.sleep(60)
+            # finalSheet Bazaar Enchants
 
-                updateShuffleSheet(newData=profitSort, gsheetAPI=gsheetAPI3, sheetName=sheet, minionShuffles=minionShuffles)
+            bazaarCosts = bazaarCraftFlips.bazaarPart(files)
 
+            auctionPrices = bazaarCraftFlips.auctionPart()
 
-                #finalSheet Bazaar Enchants
+            finalData = bazaarCraftFlips.compareData(bazaarCosts, auctionPrices)
 
-                bazaarCosts = bazaarCraftFlips.bazaarPart()
+            sortedFlips = HypixelData.sortData(data=finalData, dataFeature="minProfit")
+            time.sleep(60)
+            updateCraftFlippingSheet(newData=sortedFlips, gsheetAPI=gsheetAPI3, sheetName=sheet)
+            # Saves the currentData in our CrashData file, ensuring it becomes the next "previous" data
 
-                auctionPrices = bazaarCraftFlips.auctionPart()
+            crashes.append(HypixelData.checkCrashData(currentData))
+            HypixelData.saveCrashData(data=currentData)
+            count += 1
+            print("Sheet last updated on", datetime.now())
 
-                finalData = bazaarCraftFlips.compareData(bazaarCosts, auctionPrices)
-
-                sortedFlips = HypixelData.sortData(data=finalData, dataFeature="minProfit")
-                time.sleep(20)
-                updateCraftFlippingSheet(newData=sortedFlips, gsheetAPI=gsheetAPI4, sheetName=sheet)
-                # Saves the currentData in our CrashData file, ensuring it becomes the next "previous" data
+            if count % 3 == 0:
+                updateCrashesGoogleSheet(crashData=crashes, gsheetAPI=gsheetAPI1, sheetName=sheet)
                 crashes = []
-                crashes.append(HypixelData.checkCrashData(currentData))
-                HypixelData.saveCrashData(data=currentData)
-                count += 1
-                print("Sheet last updated on", datetime.now())
+                time.sleep(60)
+
+            if count % 5 == 0:
+                HypixelData.saveBazaarData(currentData)
+
+                time.sleep(50)
+            else:
+                time.sleep(80)
+
+            # Catches the only error we end up hitting, an api error with gspread that randomly occurs (I don't know)
+    except:
+        print(sys.exc_info())
+        time.sleep(60)
+        main(count)
 
 
-                if count % 3 == 0:
-                    updateCrashesGoogleSheet(crashData=crashes, gsheetAPI=gsheetAPI1, sheetName=sheet)
-                    crashes = []
-                    time.sleep(50)
-
-
-                if count % 5 == 0:
-                    HypixelData.saveBazaarData(currentData)
-
-                    time.sleep(50)
-                else:
-                    time.sleep(80)
-                    
-            except:
-                print("Encountered error", sys.exc_info()[0])
-                main(0)
-
-
+# Call main initializing count to 0
 main(count=0)
